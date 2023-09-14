@@ -3,6 +3,8 @@ from typing import Any, Iterable, List, Tuple
 
 from typing_extensions import Protocol
 
+from copy import deepcopy
+
 # ## Task 1.1
 # Central Difference calculation
 
@@ -22,8 +24,9 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError('Need to implement for Task 1.1')
+    l_vals = deepcopy(list(vals)); l_vals[arg] -= epsilon
+    r_vals = deepcopy(list(vals)); r_vals[arg] += epsilon
+    return (f(*r_vals) - f(*l_vals)) / (2 * epsilon)
 
 
 variable_count = 1
@@ -61,8 +64,17 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    visited = set()
+    sorted_vars = []
+    def dfs(var):
+        visited.add(var.unique_id)
+        if not var.is_leaf():
+            for p in var.parents:
+                if not p.unique_id in visited:
+                    dfs(p)
+        sorted_vars.insert(0, var)
+    dfs(variable)
+    return sorted_vars
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -76,8 +88,19 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    sorted_vars = topological_sort(variable)
+    derivatives = {variable.unique_id: deriv}
+    for var in sorted_vars:
+        var_d = derivatives[var.unique_id]
+        if var.is_leaf():
+            var.accumulate_derivative(var_d)
+        else:
+            for v, d in var.chain_rule(var_d):
+                if v.unique_id in derivatives:
+                    derivatives[v.unique_id] += d
+                else:
+                    derivatives[v.unique_id] = d
+
 
 
 @dataclass
